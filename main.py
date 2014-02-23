@@ -1,6 +1,31 @@
 #!python3
-import os, subprocess, shutil, shlex, codecs
+import sys, os, subprocess, codecs
+import shutil, shlex
+from ctypes import windll
 
+STD_OUTPUT_HANDLE = -11
+stdout_handle = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
+
+DEFAULT, COMMAND, GREEN, RED = 7, 11, 10, 12
+COLORS = {
+	'd': DEFAULT,
+	'c': COMMAND,
+	'g': GREEN,
+	'r': RED
+}
+
+def setColor(color):
+	windll.kernel32.SetConsoleTextAttribute(stdout_handle, color)
+
+def colorPrint(s):
+	a = s.split('$')
+	for l in a:
+		if l[0]=='~':
+			setColor(COLORS[l[1]])
+		else:
+			print(l, end="")
+			sys.stdout.flush()
+	print("")
 
 def resetProgress():
 	try:
@@ -13,6 +38,7 @@ def setUpWorkspace():
 	try:
 		os.mkdir("myfirstrepo")
 	except:
+		setColor(RED)
 		print("Error creating folder")
 
 	os.chdir("myfirstrepo")
@@ -20,6 +46,7 @@ def setUpWorkspace():
 
 baseDir = os.getcwd()
 def commandInput():
+	setColor(DEFAULT)
 	s = input(os.getcwd().replace(baseDir, "")[1:]+">")
 	t = shlex.split(s)
 	out = "error"
@@ -29,9 +56,11 @@ def commandInput():
 			out = codecs.decode(out)
 		except:
 			out = codecs.decode(out, 'cp866', 'ignore')
+		setColor(DEFAULT)
 		print(out)
 	except:
 		print(t)
+		setColor(RED)
 		print("Something going wrong")
 
 	return (t, out)
@@ -47,7 +76,7 @@ lessons = [
 (
 """Мы находимся в почти-настоящем-терминале в папке myfirstrepo.
 И нам нужно создать здесь новый git репозиторий.
-Для этого нужно просто ввести команду: git init
+Для этого нужно просто ввести команду: $~c$git init$~d$
 """,
 lambda it, ot: "git" in it and "init" in it and "Initialized" in ot
 ), 
@@ -79,7 +108,8 @@ setUpWorkspace()
 
 lesson = 0
 while lesson<len(lessons):
-	print(lessons[lesson][0])
+	# print(lessons[lesson][0])
+	colorPrint(lessons[lesson][0])
 	while True:
 		it, ot = commandInput()
 
@@ -92,16 +122,20 @@ while lesson<len(lessons):
 		if "dir"==it[0]:
 			pass
 		elif lessons[lesson][1](it, ot):
-			# print("PROFIT")
 			suc = True
 		else:
+			setColor(RED)
 			print("Что-то не так, попробуй ещё раз")
 
 		if suc:
 			break
 	lesson+=1
 
+setColor(GREEN)
 print("Нет больше уроков")
+
+
+setColor(DEFAULT)
 
 
 # - add file
